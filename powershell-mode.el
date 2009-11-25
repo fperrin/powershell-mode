@@ -3,7 +3,7 @@
 ;; Copyright (C) 2009 Frédéric Perrin
 
 ;; Author: Frédéric Perrin
-;; Keywords: Powershell, Monad
+;; Keywords: Powershell, Monad, MSH
 
 ;; This file is free software; you can redistribute it and/or modify
 ;; it under the terms of the GNU General Public License as published by
@@ -48,6 +48,10 @@ previous line is a continued line, ending with a backtick or a pipe"
   (interactive)
   (beginning-of-line)
   (let ((closing-paren (looking-at "[\t ]*[])}]")))
+    ;; a very simple indentation method: if on a continuation line (i.e. the
+    ;; previous line ends with a trailing backtick or pipe), we indent relative
+    ;; to the continued line; otherwise, we indent relative to the ([{ that
+    ;; opened the current block.
     (cond
      ((pshell-continuation-line-p)
       (while (pshell-continuation-line-p)
@@ -81,6 +85,22 @@ in place if it is inside the meat of the line"
 	(save-excursion (indent-line-to amount))
       (indent-line-to amount))))
 
- (define-derived-mode pshell-mode fundamental-mode "PS"
-   "A major mode for editing Powershell script files."
-   (set (make-local-variable 'indent-line-function) 'pshell-indent-line))
+(defvar pshell-keywords
+  (regexp-opt '("begin" "break" "catch" "continue" "data" "do" "dynamicparam"
+		"else" "elseif" "end" "exit" "filter" "finally" "for" "foreach"
+		"from" "function" "if" "in" "param" "process" "return"
+		"switch" "throw" "trap" "try" "until" "while"))
+  "Powershell keywords")
+
+(defvar pshell-font-lock-keywords-3
+  (list
+   (cons (concat "\\<" pshell-keywords "\\>") 'font-lock-keyword-face)
+   '("$\\(\\w+\\)\\>" . '(1 font-lock-variable-name-face)))
+  "Keywords for font-locking in Powershell mode. Only one level
+of font-locking is defined.")
+
+(define-derived-mode pshell-mode fundamental-mode "PS"
+  "A major mode for editing Powershell script files."
+  (set (make-local-variable 'indent-line-function) 'pshell-indent-line)
+  (set (make-local-variable 'font-lock-defaults)
+       '((pshell-font-lock-keywords-3) nil t)))
