@@ -24,16 +24,16 @@
 
 (setq debug-on-error t)
 
-(defvar pshell-continued-regexp  ".*\\(|[\\t ]*\\|`\\)"
-  "Regexp matching a continued line (ending either with an
-explicit backtick, or with a pipe).")
-
 (defvar pshell-indent 8
   "Amount of horizontal space to indent after, for instance, an
 opening brace")
 
 (defvar pshell-continuation-indent 4
   "Amount of horizontal space to indent a continuation line")
+
+(defvar pshell-continued-regexp  ".*\\(|[\\t ]*\\|`\\)$"
+  "Regexp matching a continued line (ending either with an
+explicit backtick, or with a pipe).")
 
 (defun pshell-continuation-line-p ()
   "Returns t is the current line is a continuation line (i.e. the
@@ -52,20 +52,19 @@ previous line is a continued line, ending with a backtick or a pipe"
     ;; previous line ends with a trailing backtick or pipe), we indent relative
     ;; to the continued line; otherwise, we indent relative to the ([{ that
     ;; opened the current block.
-    (cond
-     ((pshell-continuation-line-p)
-      (while (pshell-continuation-line-p)
-	(forward-line -1))
-      (+ (current-indentation) pshell-continuation-indent))
-     ((save-excursion
-	(forward-line -1)
-	(pshell-continuation-line-p))
-      (forward-line -1)
-      (- (current-indentation) pshell-continuation-indent))
-     (t
+    (if (pshell-continuation-line-p)
+	(progn
+	  (while (pshell-continuation-line-p)
+	    (forward-line -1))
+	  (+ (current-indentation) pshell-continuation-indent))
       (condition-case nil
 	  (progn
 	    (backward-up-list)
+	    ;; indentation relative to the opening paren: if there is text (no
+	    ;; comment) after the opening paren, vertically align the block
+	    ;; under the opening paren; if we are looking at the closing
+	    ;; paren, reset the indentation; otherwise, indent the block by
+	    ;; pshell-indent.
 	    (cond ((not (looking-at ".[\t ]*\\(#.*\\)?$"))
 		   (1+ (current-column)))
 		  (closing-paren
@@ -73,7 +72,7 @@ previous line is a continued line, ending with a backtick or a pipe"
 		  (t
 		   (+ (current-indentation) pshell-indent))))
 	(scan-error ;; most likely, we are at the top-level
-	 0))))))
+	 0)))))
 
 (defun pshell-indent-line ()
   "Indent the current line of powershell mode, leaving the point
@@ -99,8 +98,18 @@ in place if it is inside the meat of the line"
   "Keywords for font-locking in Powershell mode. Only one level
 of font-locking is defined.")
 
+(defvar pshell-mode-syntax-table (make-syntax-table)
+  "Syntax table for Powershell mode")
+
+(modify-syntax-entry ?# "<" pshell-mode-syntax-table)
+(modify-syntax-entry ?\n ">" pshell-mode-syntax-table)
+;; Powershell uses a backtick as its escape character.
+(modify-syntax-entry ?` "\\" pshell-mode-syntax-table)
+(modify-syntax-entry ?\\ "_" pshell-mode-syntax-table)
+
 (define-derived-mode pshell-mode fundamental-mode "PS"
   "A major mode for editing Powershell script files."
   (set (make-local-variable 'indent-line-function) 'pshell-indent-line)
   (set (make-local-variable 'font-lock-defaults)
-       '((pshell-font-lock-keywords-3) nil t)))
+       '((pshell-font-lock-keywords-3) nil t))
+  (set-syntax-table pshell-mode-syntax-table))
