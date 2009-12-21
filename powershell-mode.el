@@ -2,7 +2,7 @@
 
 ;; Copyright (C) 2009 Frédéric Perrin
 
-;; Author: Frédéric Perrin
+;; Author: Frédéric Perrin <frederic (dot) perrin (arobas) resel (dot) fr>
 ;; Keywords: Powershell, Monad, MSH
 
 ;; This file is free software; you can redistribute it and/or modify
@@ -20,7 +20,16 @@
 ;; the Free Software Foundation, Inc., 59 Temple Place - Suite 330,
 ;; Boston, MA 02111-1307, USA.
 
-;;; Comment: WIP
+;;; Comment:
+;; This is still WIP.
+;;
+;; This was written from scratch, without using Vivek Sharma's code:
+;; it had issues I wanted to correct, but unfortunately there were no
+;; licence indication, and Vivek didn't answered my mails.
+;;
+;; This is still pretty basic: only indentation and syntax hilighting
+;; for the moment. The indentation is pretty naïve but robust, and
+;; sufficient for my current needs.
 
 (setq debug-on-error t)
 
@@ -91,12 +100,52 @@ in place if it is inside the meat of the line"
 		"switch" "throw" "trap" "try" "until" "while"))
   "Powershell keywords")
 
-(defvar pshell-font-lock-keywords-3
-  (list
-   (cons (concat "\\<" pshell-keywords "\\>") 'font-lock-keyword-face)
-   '("$\\(\\w+\\)\\>" . '(1 font-lock-variable-name-face)))
-  "Keywords for font-locking in Powershell mode. Only one level
-of font-locking is defined.")
+(defvar pshell-operators
+  (regexp-opt '("and" "as" "band" "bnot" "bor" "bxor" "casesensitive"
+		"ccontains" "ceq" "cge" "cgt" "cle" "clike" "clt" "cmatch"
+		"cne" "cnotcontains" "cnotlike" "cnotmatch" "contains"
+		"creplace" "eq" "exact" "f" "file" "ge" "gt" "icontains"
+		"ieq" "ige" "igt" "ile" "ilike" "ilt" "imatch" "ine"
+		"inotcontains" "inotlike" "inotmatch" "ireplace" "is"
+		"isnot" "le" "like" "lt" "match" "ne" "not" "notcontains"
+		"notlike" "notmatch" "or" "replace" "wildcard"))
+  "Powershell operators")
+
+(defvar pshell-scope-names
+  (regexp-opt
+  '("env" "function" "global" "local" "private" "script" "variable"))
+  "Names of scopes in Powershell mode.")
+
+(defconst pshell-font-lock-keywords-1
+  (eval-when-compile
+    `(;; Type annotations
+      ("\\[\\([[:word:].]+\\)\\]" 1 font-lock-type-face)
+      ;; syntaxic keywords
+      (,(concat "\\<" pshell-keywords "\\>") . font-lock-keyword-face)
+      ;; operators
+      (,(concat "\\<-" pshell-operators "\\>") . font-lock-builtin-face)))
+  "Keywords for the first level of font-locking in Powershell mode.")
+
+(defconst pshell-font-lock-keywords-2 pshell-font-lock-keywords-1
+  "Keywords for the second level of font-locking in Powershell mode.")
+
+(defconst pshell-font-lock-keywords-3
+  (append
+   pshell-font-lock-keywords-1
+   (eval-when-compile
+     `(;; Variables in curly brackets
+       ("\\${\\([^}]+\\)}" 1 font-lock-variable-name-face)
+       ;; Variables, with a scope
+       (,(concat "\\$\\(" pshell-scope-names "\\):"
+		 "\\([[:word:]_]+\\)")
+	(1 font-lock-type-face)
+	(2 font-lock-variable-name-face))
+       ;; Variables, without a scope. XXX: unify this with the
+       ;; previous rule?
+       ("\\$\\([[:word:]_]+\\)" 1 font-lock-variable-name-face)
+       ;; hilight properties, but not the methods (personnal preference
+       ("\\.\\([[:word:]_.]+\\)\\s *[^(]" 1 font-lock-variable-name-face))))
+  "Keywords for the maximum level of font-locking in Powershell mode.")
 
 (defvar pshell-mode-syntax-table (make-syntax-table)
   "Syntax table for Powershell mode")
@@ -106,10 +155,21 @@ of font-locking is defined.")
 ;; Powershell uses a backtick as its escape character.
 (modify-syntax-entry ?` "\\" pshell-mode-syntax-table)
 (modify-syntax-entry ?\\ "_" pshell-mode-syntax-table)
+(modify-syntax-entry ?- "w" pshell-mode-syntax-table)
+(modify-syntax-entry ?' "\"" pshell-mode-syntax-table)
 
 (define-derived-mode pshell-mode fundamental-mode "PS"
   "A major mode for editing Powershell script files."
   (set (make-local-variable 'indent-line-function) 'pshell-indent-line)
   (set (make-local-variable 'font-lock-defaults)
-       '((pshell-font-lock-keywords-3) nil t))
+       '((pshell-font-lock-keywords-1
+	  pshell-font-lock-keywords-2
+	  pshell-font-lock-keywords-3)
+	 nil t))
+  (set (make-local-variable 'comment-start) "# ")
+  (set (make-local-variable 'comment-start-skip) "#+\\s*")
+  ;; not sure why this is not the default
+  (set (make-local-variable 'parse-sexp-ignore-comments) t)
   (set-syntax-table pshell-mode-syntax-table))
+
+(provide 'pshell-mode)
