@@ -71,11 +71,12 @@ previous line is a continued line, ending with a backtick or a pipe"
 	    (backward-up-list)
 	    ;; indentation relative to the opening paren: if there is text (no
 	    ;; comment) after the opening paren, vertically align the block
-	    ;; under the opening paren; if we are looking at the closing
-	    ;; paren, reset the indentation; otherwise, indent the block by
-	    ;; pshell-indent.
+	    ;; with this text; if we were looking at the closing paren, reset
+	    ;; the indentation; otherwise, indent the block by pshell-indent.
 	    (cond ((not (looking-at ".[\t ]*\\(#.*\\)?$"))
-		   (1+ (current-column)))
+		   (forward-char)
+		   (skip-chars-forward " \t")
+		   (current-column))
 		  (closing-paren
 		   (current-indentation))
 		  (t
@@ -93,6 +94,7 @@ in place if it is inside the meat of the line"
 	(save-excursion (indent-line-to amount))
       (indent-line-to amount))))
 
+
 (defvar pshell-keywords
   (regexp-opt '("begin" "break" "catch" "continue" "data" "do" "dynamicparam"
 		"else" "elseif" "end" "exit" "filter" "finally" "for" "foreach"
@@ -123,7 +125,9 @@ in place if it is inside the meat of the line"
       ;; syntaxic keywords
       (,(concat "\\<" pshell-keywords "\\>") . font-lock-keyword-face)
       ;; operators
-      (,(concat "\\<-" pshell-operators "\\>") . font-lock-builtin-face)))
+      (,(concat "\\<-" pshell-operators "\\>") . font-lock-builtin-face)
+      ;; the REQUIRES mark
+      ("^#\\(REQUIRES\\)" 1 font-lock-warning-face t)))
   "Keywords for the first level of font-locking in Powershell mode.")
 
 (defconst pshell-font-lock-keywords-2 pshell-font-lock-keywords-1
@@ -138,15 +142,16 @@ in place if it is inside the meat of the line"
        ;; Variables, with a scope
        (,(concat "\\$\\(" pshell-scope-names "\\):"
 		 "\\([[:word:]_]+\\)")
-	(1 font-lock-type-face)
+	(1 (cons font-lock-type-face '(underline)))
 	(2 font-lock-variable-name-face))
        ;; Variables, without a scope. XXX: unify this with the
        ;; previous rule?
        ("\\$\\([[:word:]_]+\\)" 1 font-lock-variable-name-face)
-       ;; hilight properties, but not the methods (personnal preference
-       ("\\.\\([[:word:]_.]+\\)\\s *[^(]" 1 font-lock-variable-name-face))))
+       ;; hilight properties, but not the methods (personnal preference)
+       ("\\.\\([[:word:]_.]+\\)\\>\\s *[^(]" 1 font-lock-variable-name-face))))
   "Keywords for the maximum level of font-locking in Powershell mode.")
 
+
 (defvar pshell-mode-syntax-table (make-syntax-table)
   "Syntax table for Powershell mode")
 
@@ -157,6 +162,22 @@ in place if it is inside the meat of the line"
 (modify-syntax-entry ?\\ "_" pshell-mode-syntax-table)
 (modify-syntax-entry ?- "w" pshell-mode-syntax-table)
 (modify-syntax-entry ?' "\"" pshell-mode-syntax-table)
+
+
+(defvar pshell-imenu-expression
+  `(("Functions" "function \\(\\w+\\)" 1)
+    ("Top variables" ,(concat "^\\$\\(" pshell-scope-names "\\)?:?"
+			      "\\([[:word:]_]+\\)")
+     2))
+  "List of regexps matching important expressions, for speebar & imenu.")
+
+(if (require 'speedbar)
+    (speedbar-add-supported-extension ".ps1?"))
+
+
+;; the hook is automatically run by derived-mode
+(defvar pshell-mode-hook '(imenu-add-menubar-index)
+  "Hook run after the initialization of Powershell mode.")
 
 (define-derived-mode pshell-mode fundamental-mode "PS"
   "A major mode for editing Powershell script files."
@@ -170,6 +191,9 @@ in place if it is inside the meat of the line"
   (set (make-local-variable 'comment-start-skip) "#+\\s*")
   ;; not sure why this is not the default
   (set (make-local-variable 'parse-sexp-ignore-comments) t)
-  (set-syntax-table pshell-mode-syntax-table))
+  (set-syntax-table pshell-mode-syntax-table)
+  (set (make-local-variable 'imenu-generic-expression)
+       pshell-imenu-expression)
+  (set (make-local-variable 'imenu-case-fold-search) nil))
 
 (provide 'pshell-mode)
