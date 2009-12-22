@@ -95,6 +95,11 @@ in place if it is inside the meat of the line"
       (indent-line-to amount))))
 
 
+;; Taken from <http://www.manning.com/payette/AppCexcerpt.pdf> which seems the
+;; closest to a grammar definition for powershell. It is not complete, and
+;; contains some inaccuracies (e.g. it says that variables match \$[:alnum:]+,
+;; so $_ is not a variable it seems...)
+
 (defvar pshell-keywords
   (regexp-opt '("begin" "break" "catch" "continue" "data" "do" "dynamicparam"
 		"else" "elseif" "end" "exit" "filter" "finally" "for" "foreach"
@@ -118,37 +123,58 @@ in place if it is inside the meat of the line"
   '("env" "function" "global" "local" "private" "script" "variable"))
   "Names of scopes in Powershell mode.")
 
-(defconst pshell-font-lock-keywords-1
-  (eval-when-compile
-    `(;; Type annotations
-      ("\\[\\([[:word:].]+\\)\\]" 1 font-lock-type-face)
-      ;; syntaxic keywords
-      (,(concat "\\<" pshell-keywords "\\>") . font-lock-keyword-face)
-      ;; operators
-      (,(concat "\\<-" pshell-operators "\\>") . font-lock-builtin-face)
-      ;; the REQUIRES mark
-      ("^#\\(REQUIRES\\)" 1 font-lock-warning-face t)))
+;; Taken from Get-Variable on a fresh shell, merged with man
+;; about_automatic_variables
+(defvar pshell-builtin-variables
+  (regexp-opt
+   '("^" "_" "$" "?" "Args" "ConfirmPreference" "ConsoleFileName"
+     "DebugPreference" "Error" "ErrorActionPreference" "ErrorView"
+     "ExecutionContext" "foreach" "FormatEnumerationLimit" "HOME" "Host"
+     "Input" "LASTEXITCODE" "MaximumAliasCount" "MaximumDriveCount"
+     "MaximumErrorCount" "MaximumFunctionCount" "MaximumHistoryCount"
+     "MaximumVariableCount" "MyInvocation" "NestedPromptLevel" "OFS"
+     "OutputEncoding" "PID" "PROFILE" "PSHOME" "PWD" "ProgressPreference"
+     "ReportErrorShowExceptionClass" "ReportErrorShowInnerException"
+     "ReportErrorShowSource" "ReportErrorShowStackTrace" "ShellId"
+     "ShouldProcessPreference" "ShouldProcessReturnPreference" "StackTrace"
+     "VerbosePreference" "WarningPreference" "WhatIfPreference" "false"
+     "input" "lastWord" "line" "null" "true" ))
+  "Names of the built-in Powershell variables.")
+
+(defvar pshell-font-lock-keywords-1
+  `(;; Type annotations
+    ("\\[\\([[:word:].]+\\(?:\\[\\]\\)?\\)\\]" 1 font-lock-type-face)
+    ;; syntaxic keywords
+    (,(concat "\\<" pshell-keywords "\\>") . font-lock-keyword-face)
+    ;; operators
+    (,(concat "\\<-" pshell-operators "\\>") . font-lock-builtin-face)
+    ;; the REQUIRES mark
+    ("^#\\(REQUIRES\\)" 1 font-lock-warning-face t))
   "Keywords for the first level of font-locking in Powershell mode.")
 
-(defconst pshell-font-lock-keywords-2 pshell-font-lock-keywords-1
-  "Keywords for the second level of font-locking in Powershell mode.")
-
-(defconst pshell-font-lock-keywords-3
+(defvar pshell-font-lock-keywords-2
   (append
    pshell-font-lock-keywords-1
-   (eval-when-compile
-     `(;; Variables in curly brackets
-       ("\\${\\([^}]+\\)}" 1 font-lock-variable-name-face)
-       ;; Variables, with a scope
-       (,(concat "\\$\\(" pshell-scope-names "\\):"
-		 "\\([[:word:]_]+\\)")
-	(1 (cons font-lock-type-face '(underline)))
-	(2 font-lock-variable-name-face))
-       ;; Variables, without a scope. XXX: unify this with the
-       ;; previous rule?
-       ("\\$\\([[:word:]_]+\\)" 1 font-lock-variable-name-face)
-       ;; hilight properties, but not the methods (personnal preference)
-       ("\\.\\([[:word:]_.]+\\)\\>\\s *[^(]" 1 font-lock-variable-name-face))))
+   `(;; Built-in variables
+     (,(concat "\\$\\(" pshell-builtin-variables "\\)\\>")
+      1 font-lock-builtin-face t)))
+  "Keywords for the second level of font-locking in Powershell mode.")
+
+(defvar pshell-font-lock-keywords-3
+  (append
+   pshell-font-lock-keywords-2
+   `(;; Variables in curly brackets
+     ("\\${\\([^}]+\\)}" 1 font-lock-variable-name-face)
+     ;; Variables, with a scope
+     (,(concat "\\$\\(" pshell-scope-names "\\):"
+	       "\\([[:alnum:]_]+\\)")
+      (1 (cons font-lock-type-face '(underline)))
+      (2 font-lock-variable-name-face))
+     ;; Variables, without a scope. XXX: unify this with the
+     ;; previous rule?
+     ("\\$\\([[:alnum:]_]+\\)" 1 font-lock-variable-name-face)
+     ;; hilight properties, but not the methods (personnal preference)
+     ("\\.\\([[:alnum:]_.]+\\)\\>\\s *[^(]" 1 font-lock-variable-name-face)))
   "Keywords for the maximum level of font-locking in Powershell mode.")
 
 
@@ -167,7 +193,7 @@ in place if it is inside the meat of the line"
 (defvar pshell-imenu-expression
   `(("Functions" "function \\(\\w+\\)" 1)
     ("Top variables" ,(concat "^\\$\\(" pshell-scope-names "\\)?:?"
-			      "\\([[:word:]_]+\\)")
+			      "\\([[:alnum:]_]+\\)")
      2))
   "List of regexps matching important expressions, for speebar & imenu.")
 
