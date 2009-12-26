@@ -5,20 +5,18 @@
 ;; Author: Frédéric Perrin <frederic (dot) perrin (arobas) resel (dot) fr>
 ;; Keywords: Powershell, Monad, MSH
 
-;; This file is free software; you can redistribute it and/or modify
-;; it under the terms of the GNU General Public License as published by
-;; the Free Software Foundation; either version 2, or (at your option)
-;; any later version.
+;; This file is free software: you can redistribute it and/or modify
+;; it under the terms of the GNU General Public License as published
+;; by the Free Software Foundation, either version 3 of the License,
+;; or (at your option) any later version.
 
-;; This file is distributed in the hope that it will be useful,
-;; but WITHOUT ANY WARRANTY; without even the implied warranty of
-;; MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-;; GNU General Public License for more details.
+;; GNU Emacs is distributed in the hope that it will be useful, but
+;; WITHOUT ANY WARRANTY; without even the implied warranty of
+;; MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
+;; General Public License for more details.
 
 ;; You should have received a copy of the GNU General Public License
-;; along with GNU Emacs; see the file COPYING.  If not, write to
-;; the Free Software Foundation, Inc., 59 Temple Place - Suite 330,
-;; Boston, MA 02111-1307, USA.
+;; along with GNU Emacs.  If not, see <http://www.gnu.org/licenses/>.
 
 ;;; Comment:
 ;; This is still WIP.
@@ -27,9 +25,9 @@
 ;; it had issues I wanted to correct, but unfortunately there were no
 ;; licence indication, and Vivek didn't answered my mails.
 ;;
-;; This is still pretty basic: only indentation and syntax hilighting
-;; for the moment. The indentation is pretty naïve but robust, and
-;; sufficient for my current needs.
+;; This is still pretty basic: there is indentation, syntax
+;; hilighting, speedbar/imenu support. The indentation is pretty naïve
+;; but robust, and sufficient for my current needs.
 
 (setq debug-on-error t)
 
