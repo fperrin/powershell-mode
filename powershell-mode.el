@@ -195,12 +195,23 @@ in place if it is inside the meat of the line"
      2))
   "List of regexps matching important expressions, for speebar & imenu.")
 
-(if (require 'speedbar)
+(if (require 'speedbar nil t)
     (speedbar-add-supported-extension ".ps1?"))
 
+(require 'compile nil t)
+;; A better command would be something like "powershell.exe -NoLogo
+;; -NonInteractive -Command & (buffer-file-name)". But it will just
+;; sit there waiting...  The following will only work when .ps1 files
+;; are associated with powershell.exe. And if they don't contain spaces.
 (defvar pshell-compile-command
-  '(format "powershell.exe -NoLogo -Noninteractive & '%s'" (buffer-file-name))
+  '(buffer-file-name)
   "Default command used to invoke a powershell script")
+
+;; The column number will be off whenever tabs are used. Since this is
+;; the default in this mode, we will not capture the column number.
+(setq compilation-error-regexp-alist
+      (cons '("At \\(.*\\):\\([0-9]+\\) char:\\([0-9]+\\)" 1 2)
+	    compilation-error-regexp-alist))
 
 
 ;; the hook is automatically run by derived-mode
