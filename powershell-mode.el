@@ -141,7 +141,7 @@ in place if it is inside the meat of the line"
 
 (defvar pshell-font-lock-keywords-1
   `(;; Type annotations
-    ("\\[\\([[:word:].]+\\(?:\\[\\]\\)?\\)\\]" 1 font-lock-type-face)
+    ("\\[\\([[:word:].]+\\(\\[\\]\\)?\\)\\]" 1 font-lock-type-face)
     ;; syntaxic keywords
     (,(concat "\\<" pshell-keywords "\\>") . font-lock-keyword-face)
     ;; operators
@@ -198,6 +198,10 @@ in place if it is inside the meat of the line"
 (if (require 'speedbar)
     (speedbar-add-supported-extension ".ps1?"))
 
+(defvar pshell-compile-command
+  '(format "powershell.exe -NoLogo -Noninteractive & '%s'" (buffer-file-name))
+  "Default command used to invoke a powershell script")
+
 
 ;; the hook is automatically run by derived-mode
 (defvar pshell-mode-hook '(imenu-add-menubar-index)
@@ -218,6 +222,7 @@ in place if it is inside the meat of the line"
   (set-syntax-table pshell-mode-syntax-table)
   (set (make-local-variable 'imenu-generic-expression)
        pshell-imenu-expression)
-  (set (make-local-variable 'imenu-case-fold-search) nil))
+  (set (make-local-variable 'imenu-case-fold-search) nil)
+  (set (make-local-variable 'compile-command) pshell-compile-command))
 
 (provide 'pshell-mode)
