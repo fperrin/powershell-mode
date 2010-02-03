@@ -1,6 +1,6 @@
-;;; pshell-mode.el --- Mode for editing Powershell scripts
+;;; powershell-mode.el --- Mode for editing Powershell scripts
 
-;; Copyright (C) 2009 Frédéric Perrin
+;; Copyright (C) 2009, 2010 Frédéric Perrin
 
 ;; Author: Frédéric Perrin <frederic (dot) perrin (arobas) resel (dot) fr>
 ;; Keywords: Powershell, Monad, MSH
@@ -31,26 +31,26 @@
 
 (setq debug-on-error t)
 
-(defvar pshell-indent 8
+(defvar powershell-indent 8
   "Amount of horizontal space to indent after, for instance, an
 opening brace")
 
-(defvar pshell-continuation-indent 4
+(defvar powershell-continuation-indent 4
   "Amount of horizontal space to indent a continuation line")
 
-(defvar pshell-continued-regexp  ".*\\(|[\\t ]*\\|`\\)$"
+(defvar powershell-continued-regexp  ".*\\(|[\\t ]*\\|`\\)$"
   "Regexp matching a continued line (ending either with an
 explicit backtick, or with a pipe).")
 
-(defun pshell-continuation-line-p ()
+(defun powershell-continuation-line-p ()
   "Returns t is the current line is a continuation line (i.e. the
 previous line is a continued line, ending with a backtick or a pipe"
   (interactive)
   (save-excursion
     (forward-line -1)
-    (looking-at pshell-continued-regexp)))
+    (looking-at powershell-continued-regexp)))
 
-(defun pshell-indent-line-amount ()
+(defun powershell-indent-line-amount ()
   "Returns the column to which the current line ought to be indented."
   (interactive)
   (beginning-of-line)
@@ -59,18 +59,18 @@ previous line is a continued line, ending with a backtick or a pipe"
     ;; previous line ends with a trailing backtick or pipe), we indent relative
     ;; to the continued line; otherwise, we indent relative to the ([{ that
     ;; opened the current block.
-    (if (pshell-continuation-line-p)
+    (if (powershell-continuation-line-p)
 	(progn
-	  (while (pshell-continuation-line-p)
+	  (while (powershell-continuation-line-p)
 	    (forward-line -1))
-	  (+ (current-indentation) pshell-continuation-indent))
+	  (+ (current-indentation) powershell-continuation-indent))
       (condition-case nil
 	  (progn
 	    (backward-up-list)
 	    ;; indentation relative to the opening paren: if there is text (no
 	    ;; comment) after the opening paren, vertically align the block
 	    ;; with this text; if we were looking at the closing paren, reset
-	    ;; the indentation; otherwise, indent the block by pshell-indent.
+	    ;; the indentation; otherwise, indent the block by powershell-indent.
 	    (cond ((not (looking-at ".[\t ]*\\(#.*\\)?$"))
 		   (forward-char)
 		   (skip-chars-forward " \t")
@@ -78,16 +78,16 @@ previous line is a continued line, ending with a backtick or a pipe"
 		  (closing-paren
 		   (current-indentation))
 		  (t
-		   (+ (current-indentation) pshell-indent))))
+		   (+ (current-indentation) powershell-indent))))
 	(scan-error ;; most likely, we are at the top-level
 	 0)))))
 
-(defun pshell-indent-line ()
+(defun powershell-indent-line ()
   "Indent the current line of powershell mode, leaving the point
 in place if it is inside the meat of the line"
   (interactive)
   (let ((savep (> (current-column) (current-indentation)))
-	(amount (save-excursion (pshell-indent-line-amount))))
+	(amount (save-excursion (powershell-indent-line-amount))))
     (if savep
 	(save-excursion (indent-line-to amount))
       (indent-line-to amount))))
@@ -98,14 +98,14 @@ in place if it is inside the meat of the line"
 ;; contains some inaccuracies (e.g. it says that variables match \$[:alnum:]+,
 ;; so $_ is not a variable it seems...)
 
-(defvar pshell-keywords
+(defvar powershell-keywords
   (regexp-opt '("begin" "break" "catch" "continue" "data" "do" "dynamicparam"
 		"else" "elseif" "end" "exit" "filter" "finally" "for" "foreach"
 		"from" "function" "if" "in" "param" "process" "return"
 		"switch" "throw" "trap" "try" "until" "while"))
   "Powershell keywords")
 
-(defvar pshell-operators
+(defvar powershell-operators
   (regexp-opt '("and" "as" "band" "bnot" "bor" "bxor" "casesensitive"
 		"ccontains" "ceq" "cge" "cgt" "cle" "clike" "clt" "cmatch"
 		"cne" "cnotcontains" "cnotlike" "cnotmatch" "contains"
@@ -116,14 +116,14 @@ in place if it is inside the meat of the line"
 		"notlike" "notmatch" "or" "replace" "wildcard"))
   "Powershell operators")
 
-(defvar pshell-scope-names
+(defvar powershell-scope-names
   (regexp-opt
   '("env" "function" "global" "local" "private" "script" "variable"))
   "Names of scopes in Powershell mode.")
 
 ;; Taken from Get-Variable on a fresh shell, merged with man
 ;; about_automatic_variables
-(defvar pshell-builtin-variables
+(defvar powershell-builtin-variables
   (regexp-opt
    '("^" "_" "$" "?" "Args" "ConfirmPreference" "ConsoleFileName"
      "DebugPreference" "Error" "ErrorActionPreference" "ErrorView"
@@ -137,34 +137,35 @@ in place if it is inside the meat of the line"
      "ShouldProcessPreference" "ShouldProcessReturnPreference" "StackTrace"
      "VerbosePreference" "WarningPreference" "WhatIfPreference" "false"
      "input" "lastWord" "line" "null" "true" ))
-  "Names of the built-in Powershell variables.")
+  "Names of the built-in Powershell variables. They are hilighted
+differently from the other variables.")
 
-(defvar pshell-font-lock-keywords-1
+(defvar powershell-font-lock-keywords-1
   `(;; Type annotations
     ("\\[\\([[:word:].]+\\(\\[\\]\\)?\\)\\]" 1 font-lock-type-face)
     ;; syntaxic keywords
-    (,(concat "\\<" pshell-keywords "\\>") . font-lock-keyword-face)
+    (,(concat "\\<" powershell-keywords "\\>") . font-lock-keyword-face)
     ;; operators
-    (,(concat "\\<-" pshell-operators "\\>") . font-lock-builtin-face)
+    (,(concat "\\<-" powershell-operators "\\>") . font-lock-builtin-face)
     ;; the REQUIRES mark
     ("^#\\(REQUIRES\\)" 1 font-lock-warning-face t))
   "Keywords for the first level of font-locking in Powershell mode.")
 
-(defvar pshell-font-lock-keywords-2
+(defvar powershell-font-lock-keywords-2
   (append
-   pshell-font-lock-keywords-1
+   powershell-font-lock-keywords-1
    `(;; Built-in variables
-     (,(concat "\\$\\(" pshell-builtin-variables "\\)\\>")
+     (,(concat "\\$\\(" powershell-builtin-variables "\\)\\>")
       1 font-lock-builtin-face t)))
   "Keywords for the second level of font-locking in Powershell mode.")
 
-(defvar pshell-font-lock-keywords-3
+(defvar powershell-font-lock-keywords-3
   (append
-   pshell-font-lock-keywords-2
+   powershell-font-lock-keywords-2
    `(;; Variables in curly brackets
      ("\\${\\([^}]+\\)}" 1 font-lock-variable-name-face)
      ;; Variables, with a scope
-     (,(concat "\\$\\(" pshell-scope-names "\\):"
+     (,(concat "\\$\\(" powershell-scope-names "\\):"
 	       "\\([[:alnum:]_]+\\)")
       (1 (cons font-lock-type-face '(underline)))
       (2 font-lock-variable-name-face))
@@ -176,21 +177,21 @@ in place if it is inside the meat of the line"
   "Keywords for the maximum level of font-locking in Powershell mode.")
 
 
-(defvar pshell-mode-syntax-table (make-syntax-table)
+(defvar powershell-mode-syntax-table (make-syntax-table)
   "Syntax table for Powershell mode")
 
-(modify-syntax-entry ?# "<" pshell-mode-syntax-table)
-(modify-syntax-entry ?\n ">" pshell-mode-syntax-table)
+(modify-syntax-entry ?# "<" powershell-mode-syntax-table)
+(modify-syntax-entry ?\n ">" powershell-mode-syntax-table)
 ;; Powershell uses a backtick as its escape character.
-(modify-syntax-entry ?` "\\" pshell-mode-syntax-table)
-(modify-syntax-entry ?\\ "_" pshell-mode-syntax-table)
-(modify-syntax-entry ?- "w" pshell-mode-syntax-table)
-(modify-syntax-entry ?' "\"" pshell-mode-syntax-table)
+(modify-syntax-entry ?` "\\" powershell-mode-syntax-table)
+(modify-syntax-entry ?\\ "_" powershell-mode-syntax-table)
+(modify-syntax-entry ?- "w" powershell-mode-syntax-table)
+(modify-syntax-entry ?' "\"" powershell-mode-syntax-table)
 
 
-(defvar pshell-imenu-expression
+(defvar powershell-imenu-expression
   `(("Functions" "function \\(\\w+\\)" 1)
-    ("Top variables" ,(concat "^\\$\\(" pshell-scope-names "\\)?:?"
+    ("Top variables" ,(concat "^\\$\\(" powershell-scope-names "\\)?:?"
 			      "\\([[:alnum:]_]+\\)")
      2))
   "List of regexps matching important expressions, for speebar & imenu.")
@@ -203,7 +204,7 @@ in place if it is inside the meat of the line"
 ;; -NonInteractive -Command & (buffer-file-name)". But it will just
 ;; sit there waiting...  The following will only work when .ps1 files
 ;; are associated with powershell.exe. And if they don't contain spaces.
-(defvar pshell-compile-command
+(defvar powershell-compile-command
   '(buffer-file-name)
   "Default command used to invoke a powershell script")
 
@@ -215,25 +216,25 @@ in place if it is inside the meat of the line"
 
 
 ;; the hook is automatically run by derived-mode
-(defvar pshell-mode-hook '(imenu-add-menubar-index)
+(defvar powershell-mode-hook '(imenu-add-menubar-index)
   "Hook run after the initialization of Powershell mode.")
 
-(define-derived-mode pshell-mode fundamental-mode "PS"
+(define-derived-mode powershell-mode fundamental-mode "PS"
   "A major mode for editing Powershell script files."
-  (set (make-local-variable 'indent-line-function) 'pshell-indent-line)
+  (set (make-local-variable 'indent-line-function) 'powershell-indent-line)
   (set (make-local-variable 'font-lock-defaults)
-       '((pshell-font-lock-keywords-1
-	  pshell-font-lock-keywords-2
-	  pshell-font-lock-keywords-3)
+       '((powershell-font-lock-keywords-1
+	  powershell-font-lock-keywords-2
+	  powershell-font-lock-keywords-3)
 	 nil t))
   (set (make-local-variable 'comment-start) "# ")
   (set (make-local-variable 'comment-start-skip) "#+\\s*")
   ;; not sure why this is not the default
   (set (make-local-variable 'parse-sexp-ignore-comments) t)
-  (set-syntax-table pshell-mode-syntax-table)
+  (set-syntax-table powershell-mode-syntax-table)
   (set (make-local-variable 'imenu-generic-expression)
-       pshell-imenu-expression)
+       powershell-imenu-expression)
   (set (make-local-variable 'imenu-case-fold-search) nil)
-  (set (make-local-variable 'compile-command) pshell-compile-command))
+  (set (make-local-variable 'compile-command) powershell-compile-command))
 
-(provide 'pshell-mode)
+(provide 'powershell-mode)
