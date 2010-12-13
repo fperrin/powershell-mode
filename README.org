@@ -1,0 +1,10 @@
+powershell-mode
+
+A simple mode for editing Powershell code in Emacs.
+
+This mode was written from scratch, without using Vivek Sharma's mode
+of the same name.
+
+This is still pretty basic: there is indentation, syntax
+hilighting, speedbar/imenu support. The indentation is pretty naïve
+but robust, and sufficient for my current needs.
