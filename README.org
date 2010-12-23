@@ -1,6 +1,6 @@
-powershell-mode
+powershell-mode -- A simple mode for editing Powershell code in Emacs.
 
-A simple mode for editing Powershell code in Emacs.
+* Description
 
 This mode was written from scratch, without using Vivek Sharma's mode
 of the same name.
@@ -8,3 +8,18 @@ of the same name.
 This is still pretty basic: there is indentation, syntax
 hilighting, speedbar/imenu support. The indentation is pretty naïve
 but robust, and sufficient for my current needs.
+
+I am not likely to keep on developing this mode, as I'm no longer a
+user of Powershell.
+
+See the initial [[http://thread.gmane.org/gmane.emacs.sources/3383][Announcing a Powershell mode for Emacs]] post on
+=emacs.sources=.
+
+* Installation
+
+The code is [[http://svn.fperrin.net/powershell-mode/][kept in my SVN repository]], with [[http://gitweb.fperrin.net/?p=powershell-mode.git][a git mirror]] available.
+Retreive the =.el= file and put it somewhere in your [[http://www.emacswiki.org/cgi-bin/wiki?LoadPath][=load-path=]]. Add
+the following to your =.emacs=:
+
+    : (autoload 'powershell-mode "powershell-mode" "Mode PowerShell" t)
+    : (push '("\\.ps[12]?$" . powershell-mode) auto-mode-alist)
