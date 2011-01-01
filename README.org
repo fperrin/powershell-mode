@@ -21,5 +21,7 @@ The code is [[http://svn.fperrin.net/powershell-mode/][kept in my SVN repository
 Retreive the =.el= file and put it somewhere in your [[http://www.emacswiki.org/cgi-bin/wiki?LoadPath][=load-path=]]. Add
 the following to your =.emacs=:
 
-    : (autoload 'powershell-mode "powershell-mode" "Mode PowerShell" t)
-    : (push '("\\.ps[12]?$" . powershell-mode) auto-mode-alist)
+#+BEGIN_SRC elisp
+  (autoload 'powershell-mode "powershell-mode" "Mode PowerShell" t)
+  (push '("\\.ps[12]?$" . powershell-mode) auto-mode-alist)
+#+END_SRC
